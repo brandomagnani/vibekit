@@ -158,8 +158,6 @@ export class VibeKit extends EventEmitter {
     const callbacks = {
       onUpdate: (data: string) => this.emit("update", data),
       onError: (error: string) => this.emit("error", error),
-      onStdout: (data: string) => this.emit("stdout", data),
-      onStderr: (data: string) => this.emit("stderr", data),
     };
 
     return this.agent.generateCode(prompt, mode, branch, history, callbacks);
@@ -258,8 +256,6 @@ export class VibeKit extends EventEmitter {
     const callbacks = {
       onUpdate: (data: string) => this.emit("update", data),
       onError: (error: string) => this.emit("error", error),
-      onStdout: (data: string) => this.emit("stdout", data),
-      onStderr: (data: string) => this.emit("stderr", data),
     };
 
     return this.agent.runTests(undefined, undefined, callbacks);
