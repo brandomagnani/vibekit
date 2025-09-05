@@ -14,14 +14,26 @@ import {
 class StreamingBuffer {
   private buffer = "";
   private onComplete: (data: string) => void;
+  private streamMode: 'json' | 'text';
 
-  constructor(onComplete: (data: string) => void) {
+  constructor(onComplete: (data: string) => void, streamMode: 'json' | 'text' = 'json') {
     this.onComplete = onComplete;
+    this.streamMode = streamMode;
   }
 
   append(chunk: string): void {
     // Filter out null bytes that can corrupt JSON parsing
     const cleanChunk = chunk.replace(/\0/g, "");
+    
+    if (this.streamMode === 'text') {
+      // For text mode (Gemini), stream immediately
+      if (cleanChunk) {
+        this.onComplete(cleanChunk);
+      }
+      return;
+    }
+    
+    // For JSON mode (Claude, etc.), use buffer processing
     this.buffer += cleanChunk;
     this.processBuffer();
   }
@@ -87,6 +99,11 @@ class StreamingBuffer {
 
   // Handle any remaining non-JSON output (like raw text)
   flush(): void {
+    if (this.streamMode === 'text') {
+      // For text mode, nothing to flush - already streamed
+      return;
+    }
+    
     if (this.buffer.trim()) {
       // If it's not JSON, pass it through as-is
       this.onComplete(this.buffer);
@@ -107,6 +124,8 @@ export interface BaseAgentConfig {
 export interface StreamCallbacks {
   onUpdate?: (message: string) => void;
   onError?: (error: string) => void;
+  onStdout?: (message: string) => void;
+  onStderr?: (message: string) => void;
 }
 
 export interface ExecuteCommandOptions {
@@ -302,9 +321,11 @@ export abstract class BaseAgent {
       let stdoutBuffer: StreamingBuffer | undefined;
       let stderrBuffer: StreamingBuffer | undefined;
 
-      if (callbacks?.onUpdate) {
-        stdoutBuffer = new StreamingBuffer(callbacks.onUpdate);
-        stderrBuffer = new StreamingBuffer(callbacks.onUpdate);
+      if (callbacks?.onUpdate || callbacks?.onStdout || callbacks?.onStderr) {
+        const streamMode = this.getAgentType() === 'gemini' ? 'text' : 'json';
+        const defaultCallback = () => {};
+        stdoutBuffer = new StreamingBuffer(callbacks.onStdout || callbacks.onUpdate || defaultCallback, streamMode);
+        stderrBuffer = new StreamingBuffer(callbacks.onStderr || callbacks.onUpdate || defaultCallback, streamMode);
       }
 
       const result = await sbx.commands.run(executeCommand, {
@@ -319,9 +340,11 @@ export abstract class BaseAgent {
       stderrBuffer?.flush();
 
       callbacks?.onUpdate?.(
-        `{"type": "end", "sandbox_id": "${
-          sbx.sandboxId
-        }", "output": "${JSON.stringify(result)}"}`
+        JSON.stringify({
+          type: "end",
+          sandbox_id: sbx.sandboxId,
+          output: result
+        })
       );
 
 
@@ -435,9 +458,11 @@ export abstract class BaseAgent {
       let stdoutBuffer: StreamingBuffer | undefined;
       let stderrBuffer: StreamingBuffer | undefined;
 
-      if (callbacks?.onUpdate) {
-        stdoutBuffer = new StreamingBuffer(callbacks.onUpdate);
-        stderrBuffer = new StreamingBuffer(callbacks.onUpdate);
+      if (callbacks?.onUpdate || callbacks?.onStdout || callbacks?.onStderr) {
+        const streamMode = this.getAgentType() === 'gemini' ? 'text' : 'json';
+        const defaultCallback = () => {};
+        stdoutBuffer = new StreamingBuffer(callbacks.onStdout || callbacks.onUpdate || defaultCallback, streamMode);
+        stderrBuffer = new StreamingBuffer(callbacks.onStderr || callbacks.onUpdate || defaultCallback, streamMode);
       }
 
       const result = await sbx.commands.run(executeCommand, {
@@ -452,9 +477,11 @@ export abstract class BaseAgent {
       stderrBuffer?.flush();
 
       callbacks?.onUpdate?.(
-        `{"type": "end", "sandbox_id": "${
-          sbx.sandboxId
-        }", "output": "${JSON.stringify(result)}"}`
+        JSON.stringify({
+          type: "end",
+          sandbox_id: sbx.sandboxId,
+          output: result
+        })
       );
 
       this.lastPrompt = prompt;
