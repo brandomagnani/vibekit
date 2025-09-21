@@ -93,6 +93,14 @@ const daytonaProvider = createDaytonaProvider({
 });
 
 .withSandbox(provider)
+
+// Modal
+
+import { createModalProvider } from "@vibe-kit/modal";
+const modalProvider = createModalProvider({ // must conduct CLI setup specified in https://modal.com/docs/reference/cli/setup beforehand
+  image: "my-codex-image" // optional
+});
+
 ```
 
 ### Additional Configuration
@@ -115,6 +123,12 @@ const daytonaProvider = createDaytonaProvider({
 
 // Reuse existing sandbox session
 .withSession("existing-sandbox-id")
+
+// Git worktrees for isolated branch development
+.withWorktrees({
+  root: "/custom/worktree/path", // optional: custom root directory
+  cleanup: true // optional: auto-cleanup after operations (default: true)
+})
 ```
 
 ## API Reference
