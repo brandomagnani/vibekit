@@ -115,26 +115,36 @@ export interface MergePullRequestResult {
 export interface CodexStreamCallbacks {
   onUpdate?: (message: string) => void;
   onError?: (error: string) => void;
+  onStdout?: (message: string) => void;
+  onStderr?: (message: string) => void;
 }
 
 export interface ClaudeStreamCallbacks {
   onUpdate?: (message: string) => void;
   onError?: (error: string) => void;
+  onStdout?: (message: string) => void;
+  onStderr?: (message: string) => void;
 }
 
 export interface OpenCodeStreamCallbacks {
   onUpdate?: (message: string) => void;
   onError?: (error: string) => void;
+  onStdout?: (message: string) => void;
+  onStderr?: (message: string) => void;
 }
 
 export interface GeminiStreamCallbacks {
   onUpdate?: (message: string) => void;
   onError?: (error: string) => void;
+  onStdout?: (message: string) => void;
+  onStderr?: (message: string) => void;
 }
 
 export interface GrokStreamCallbacks {
   onUpdate?: (message: string) => void;
   onError?: (error: string) => void;
+  onStdout?: (message: string) => void;
+  onStderr?: (message: string) => void;
 }
 
 // CODEX CONFIG

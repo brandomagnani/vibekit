@@ -50,6 +50,15 @@ export class VibeKit extends EventEmitter {
     super();
   }
 
+  private createStreamCallbacks() {
+    return {
+      onUpdate: (data: string) => this.emit("update", data),
+      onError: (error: string) => this.emit("error", error),
+      onStdout: (data: string) => this.emit("stdout", data),
+      onStderr: (data: string) => this.emit("stderr", data),
+    };
+  }
+
   withAgent(config: {
     type: AgentType;
     provider: ModelProvider;
@@ -154,30 +163,20 @@ export class VibeKit extends EventEmitter {
     prompt,
     mode = "code",
     branch,
-    history: _history, // Keep for backward compatibility but don't use
+    history,
   }: {
     prompt: string;
     mode?: AgentMode;
     branch?: string;
     history?: Conversation[];
   }): Promise<AgentResponse> {
-    // Deprecation warning
-    console.warn(
-      "⚠️  generateCode() is deprecated and will be removed in a future version. " +
-        "Please use executeCommand() instead for better flexibility and control."
-    );
-
     if (!this.agent) {
       await this.initializeAgent();
     }
 
-    // Extract the command that would be generated and use executeCommand instead
-    const commandConfig = (this.agent as any).getCommandConfig(prompt, mode);
+    const callbacks = this.createStreamCallbacks();
 
-    return this.executeCommand(commandConfig.command, {
-      branch,
-      background: false,
-    });
+    return this.agent.generateCode(prompt, mode, branch, history, callbacks);
   }
 
   async createPullRequest(
@@ -284,10 +283,7 @@ export class VibeKit extends EventEmitter {
       await this.initializeAgent();
     }
 
-    const callbacks = {
-      onUpdate: (data: string) => this.emit("update", data),
-      onError: (error: string) => this.emit("error", error),
-    };
+    const callbacks = this.createStreamCallbacks();
 
     return this.agent.runTests(undefined, undefined, callbacks);
   }
@@ -300,10 +296,7 @@ export class VibeKit extends EventEmitter {
       await this.initializeAgent();
     }
 
-    const callbacks = {
-      onUpdate: (data: string) => this.emit("stdout", data),
-      onError: (error: string) => this.emit("stderr", error),
-    };
+    const callbacks = this.createStreamCallbacks();
 
     return this.agent.executeCommand(command, { ...options, callbacks });
   }

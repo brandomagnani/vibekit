@@ -394,8 +394,25 @@ export abstract class BaseAgent {
       if (callbacks?.onUpdate || callbacks?.onStdout || callbacks?.onStderr) {
         const streamMode = this.getAgentType() === 'gemini' ? 'text' : 'json';
         const defaultCallback = () => {};
-        stdoutBuffer = new StreamingBuffer(callbacks.onStdout || callbacks.onUpdate || defaultCallback, streamMode);
-        stderrBuffer = new StreamingBuffer(callbacks.onStderr || callbacks.onUpdate || defaultCallback, streamMode);
+
+        const composeHandler = (
+          primary?: (text: string) => void,
+          secondary?: (text: string) => void
+        ) => {
+          if (primary) {
+            return primary;
+          }
+          return secondary || defaultCallback;
+        };
+
+        stdoutBuffer = new StreamingBuffer(
+          composeHandler(callbacks.onStdout, callbacks.onUpdate),
+          streamMode
+        );
+        stderrBuffer = new StreamingBuffer(
+          composeHandler(callbacks.onStderr, callbacks.onUpdate),
+          streamMode
+        );
       }
 
       const result = await sbx.commands.run(executeCommand, {
@@ -529,8 +546,25 @@ export abstract class BaseAgent {
       if (callbacks?.onUpdate || callbacks?.onStdout || callbacks?.onStderr) {
         const streamMode = this.getAgentType() === 'gemini' ? 'text' : 'json';
         const defaultCallback = () => {};
-        stdoutBuffer = new StreamingBuffer(callbacks.onStdout || callbacks.onUpdate || defaultCallback, streamMode);
-        stderrBuffer = new StreamingBuffer(callbacks.onStderr || callbacks.onUpdate || defaultCallback, streamMode);
+
+        const composeHandler = (
+          primary?: (text: string) => void,
+          secondary?: (text: string) => void
+        ) => {
+          if (primary) {
+            return primary;
+          }
+          return secondary || defaultCallback;
+        };
+
+        stdoutBuffer = new StreamingBuffer(
+          composeHandler(callbacks.onStdout, callbacks.onUpdate),
+          streamMode
+        );
+        stderrBuffer = new StreamingBuffer(
+          composeHandler(callbacks.onStderr, callbacks.onUpdate),
+          streamMode
+        );
       }
 
       const result = await sbx.commands.run(executeCommand, {
